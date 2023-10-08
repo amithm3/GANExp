@@ -36,7 +36,7 @@ def train(
                 metrics_sum[k] = metrics_sum.get(k, 0) + v
             prog.set_description(f"Epoch: {epoch + 1}/{ne} | Batch")
             prog.set_postfix(**{k: f"{v / (batch + 1):.4f}" for k, v in metrics_sum.items()})
-            step += bs
+            step += 1
     return step
 
 

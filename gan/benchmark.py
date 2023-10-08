@@ -141,7 +141,7 @@ def kl_cycle_gan_loss_step(
     loss_adversarialDA = (F.binary_cross_entropy(pred_realA, torch.ones_like(pred_realA)) +
                           F.binary_cross_entropy(pred_fakeA_true, torch.zeros_like(pred_fakeA_true)))
     loss_adversarialDB = (F.binary_cross_entropy(pred_realB, torch.ones_like(pred_realB)) +
-                          F.binary_cross_entropy(pred_fakeA_true, torch.zeros_like(pred_fakeA_true)))
+                          F.binary_cross_entropy(pred_fakeB_true, torch.zeros_like(pred_fakeB_true)))
     loss_adversarialD = (loss_adversarialDA + loss_adversarialDB) / 2
     # total loss
     loss_D = loss_adversarialD
