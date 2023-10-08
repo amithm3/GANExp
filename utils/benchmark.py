@@ -20,14 +20,12 @@ class PerceptualLoss:
 
 
 def train(
-        trainer: Callable[[..., int], dict[str, float]],
-        ds: "Dataset",
-        ne: int = 10,
-        bs: int = 32,
-        collate_fn: Callable[[list[dict[str, "torch.Tensor"]]], dict[str, "torch.Tensor"]] = None,
+        trainer: Callable[[..., int], dict[str, float]], dataset: "Dataset",
+        ne: int = 10, bs: int = 32,
+        collate_fn: Callable = None,
         step_offset: int = 0,
 ):
-    dl = DataLoader(ds, batch_size=bs, shuffle=True, collate_fn=collate_fn)
+    dl = DataLoader(dataset, batch_size=bs, shuffle=True, collate_fn=collate_fn)
     step = step_offset
     for epoch in range(ne):
         metrics_sum = {}
@@ -38,7 +36,7 @@ def train(
                 metrics_sum[k] = metrics_sum.get(k, 0) + v
             prog.set_description(f"Epoch: {epoch + 1}/{ne} | Batch")
             prog.set_postfix(**{k: f"{v / (batch + 1):.4f}" for k, v in metrics_sum.items()})
-            step += 1
+            step += bs
     return step
 
 
