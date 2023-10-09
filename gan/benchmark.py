@@ -243,14 +243,15 @@ def build_cycle_gan_trainer(
         # ===Logging===
         if writer and step % writer_period == 0:
             for k, v in metrics.items(): writer.add_scalar(k, v, step)
-            grid_realA = make_grid(realA, nrow=1, normalize=True)
-            grid_realB = make_grid(realB, nrow=1, normalize=True)
-            grid_fakeA = make_grid(generatorA(realB), nrow=1, normalize=True)
-            grid_fakeB = make_grid(generatorB(realA), nrow=1, normalize=True)
-            writer.add_image("realA", grid_realA, step)
-            writer.add_image("realB", grid_realB, step)
-            writer.add_image("fakeA", grid_fakeA, step)
-            writer.add_image("fakeB", grid_fakeB, step)
+            realA, realB = fixed_inp
+            grid_realA = make_grid(realA, nrow=len(realA), normalize=True)
+            grid_realB = make_grid(realB, nrow=len(realB), normalize=True)
+            grid_fakeA = make_grid(generatorA(realB), nrow=len(realA), normalize=True)
+            grid_fakeB = make_grid(generatorB(realA), nrow=len(realB), normalize=True)
+            gridA = make_grid([grid_realA, grid_fakeB], nrow=2, normalize=True)
+            gridB = make_grid([grid_realB, grid_fakeA], nrow=2, normalize=True)
+            writer.add_image("image/gradA", gridA, step)
+            writer.add_image("image/gridB", gridB, step)
         # ---End Logging---
 
         # ===Checkpoint===
@@ -271,7 +272,7 @@ def build_cycle_gan_trainer(
             )
         # ---End Checkpoint---
 
-        metrics["step"] = step
+        metrics["_step"] = step
         return metrics
 
     return trainer

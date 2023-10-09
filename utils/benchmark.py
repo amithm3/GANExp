@@ -29,13 +29,15 @@ def train(
     step = step_offset
     for epoch in range(ne):
         metrics_sum = {}
-        prog: "TQDM" = tqdm(dl, desc=f"Epoch: 0/{ne} | Batch", postfix={"loss": "?"}, bar_format=BAR_FORMAT)
+        prog: "TQDM" = tqdm(dl, desc=f"Epoch: 0/{ne} | Batch", bar_format=BAR_FORMAT)
         for batch, DATA in enumerate(prog):
             metrics = trainer(DATA, step)
             for k, v in metrics.items():
+                if k.startswith("_"): continue
                 metrics_sum[k] = metrics_sum.get(k, 0) + v
             prog.set_description(f"Epoch: {epoch + 1}/{ne} | Batch")
-            prog.set_postfix(**{k: f"{v / (batch + 1):.4f}" for k, v in metrics_sum.items()})
+            prog.set_postfix(**{k: f"{v / (batch + 1):.4f}" for k, v in metrics_sum.items()},
+                             **{k.removeprefix("_"): v for k, v in metrics.items() if k.startswith("_")})
             step += 1
     return step
 
