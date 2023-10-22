@@ -72,13 +72,19 @@ def build_gan_trainer(
         optimizerG: "optim.Optimizer", optimizerD: "optim.Optimizer",
         loss_step_fn: Callable[..., dict[str, float]],
         data_extractor: Callable[..., Iterable["torch.Tensor"]],
-        save_path: str = None, save_period: int = 200,
-        writer: "SummaryWriter" = False, writer_period: int = 100, fixed_inp: "torch.Tensor" = None,
-        perceptual_loss: Union["nn.Module", bool] = False, lambda_perceptual: float = 1,
-        device=None,
+        **kwargs,
 ):
+    device = kwargs.pop("device", None)
+    writer = kwargs.pop("writer", None)
+    writer_period = kwargs.pop("writer", 100)
+    fixed_inp = kwargs.pop("fixed_inp", None)
+    perceptual_loss = kwargs.pop("perceptual_loss", None)
+    lambda_perceptual = kwargs.pop("lambda_perceptual", 1)
+    save_path = kwargs.pop("save_path", None)
+    save_period = kwargs.pop("save_period", writer_period * 2)
+
     if writer:
-        assert fixed_inp is not None, \
+        assert fixed_inp, \
             "parameters `writer` and `fixed_inp` are mutually inclusive"
     if perceptual_loss is True:
         perceptual_model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features[:29].eval().to(device)
@@ -208,10 +214,11 @@ def build_cycle_gan_trainer(
         optimizerG: "optim.Optimizer", optimizerD: "optim.Optimizer",
         loss_step_fn: Callable[..., dict[str, float]],
         data_extractor: Callable[..., Iterable["torch.Tensor"]],
-        writer: "SummaryWriter" = False, writer_period: int = 100,
-        fixed_inp: list["torch.Tensor", "torch.Tensor"] = None,
         **kwargs
 ):
+    writer = kwargs.pop("writer", None)
+    writer_period = kwargs.pop("writer_period", 100)
+    fixed_inp = kwargs.pop("fixed_inp", None)
     perceptual_loss = kwargs.pop("perceptual_loss", False)
     lambda_perceptual = kwargs.pop("lambda_perceptual", 1)
     lambda_cycle = kwargs.pop("lambda_cycle", 10)
