@@ -1,7 +1,7 @@
 import os
 import random
 from pathlib import Path
-from typing import Union, Generator
+from typing import Union, Generator, TypeVar
 from abc import ABCMeta, abstractmethod
 
 import torch
@@ -10,7 +10,7 @@ from PIL import Image
 
 
 class ImageDataset(Dataset, metaclass=ABCMeta):
-    SETS = None,
+    SETS: tuple[str, ...] = ()
 
     @abstractmethod
     def get_data(self) -> Generator[dict[str, ...], None, None]:
@@ -45,9 +45,17 @@ class ImageDataset(Dataset, metaclass=ABCMeta):
             SET: str = None,
             **kwargs
     ):
+        """
+        Base class for all image datasets.
+        :param DIR: Directory to store the dataset.
+        :param SET: Subset of the dataset to use.
+        :keyword download: Whether to download the dataset.
+        :keyword sub_sample: Fraction of the dataset to use.
+        :keyword <field>_transform: Transforms to apply to <field> of the dataset.
+        """
         download = kwargs.pop("download", False)
         sub_sample = kwargs.pop("sub_sample", 1)
-        transforms = {k.removesuffix("_transform"): v for k, v in kwargs.items() if k.endswith("_transform")}
+        transforms = {k.removesuffix("_transform"): kwargs.pop(k) for k in tuple(kwargs.keys()) if k.endswith("_transform")}
         if os.path.isdir(DIR) and len(os.listdir(DIR)): download = False
         if download:
             os.makedirs(DIR, exist_ok=True)
@@ -58,6 +66,10 @@ class ImageDataset(Dataset, metaclass=ABCMeta):
             f"Value of sub_sample must be between 0 and 1, got {sub_sample}"
         assert SET in self.SETS, \
             f"invalid value of SET, must be one of {self.SETS}, got {SET}"
+        assert all(callable(t) for t in transforms.values()), \
+            f"Transforms must be callable"
+        assert kwargs == {}, \
+            f"Unused arguments: {kwargs}"
 
         self._DIR = Path(DIR)
         self._SET = SET
@@ -82,9 +94,7 @@ class ImageDataset(Dataset, metaclass=ABCMeta):
             data_item = dict(self._data[item % len(self)])
             file = data_item.pop("file")
             data_item["image"] = Image.open(file)
-            return {
-                k: self._T.get(k, lambda x: x)(v) for k, v in data_item.items()
-            }
+            return {k: self._T.get(k, lambda x: x)(v) for k, v in data_item.items()}
         else:
             raise TypeError(f"Invalid argument type {type(item)}")
 
@@ -93,9 +103,7 @@ class ImageDataset(Dataset, metaclass=ABCMeta):
         batch = tuple(batch)
         keys = batch[0].keys()
         batch = tuple(zip(*[b.values() for b in batch]))
-        return {
-            k: torch.stack(batch[i]) for i, k in enumerate(keys)
-        }
+        return {k: torch.stack(batch[i]) for i, k in enumerate(keys)}
 
 
 class DomainDataset(Dataset):
@@ -106,9 +114,7 @@ class DomainDataset(Dataset):
         return max(len(d) for d in self._domains)
 
     def __getitem__(self, item):
-        return {
-            f"domain_{i}": d[item] for i, d in enumerate(self._domains)
-        }
+        return {f"domain{i}": d[item] for i, d in enumerate(self._domains)}
 
 
 __all__ = [

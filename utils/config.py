@@ -11,18 +11,12 @@ if TYPE_CHECKING:
 
 @dataclass
 class Config:
-    dataset_path: str
     model_name: str
     model_version: str = 'v1'
     model_dir: str = "./models/"
     log_dir: str = "./logs/"
-    device: str = "cuda" if torch.has_cuda else "mps" if torch.has_mps else "cpu"
+    device: str = "cuda" if torch.backends.cuda.is_built() else "mps" if torch.backends.mps.is_built() else "cpu"
     writer: Union["SummaryWriter", bool] = False
-
-    batch_size: int = 32
-    norm: type["nn.Module"] = None
-    lr: float = 1e-3
-    p: float = 0
 
     @property
     def checkpoint_path(self) -> str:

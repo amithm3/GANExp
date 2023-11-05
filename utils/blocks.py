@@ -110,16 +110,35 @@ class ConvBlock(nn.Sequential):
 
 
 class ResidualLinearBlock(LinearBlock):
-    def __init__(self, *args, **kwargs):
+    def __init__(
+            self,
+            inp_features: int,
+            out_features: int,
+            act: Callable[[], "nn.Module"] = None,
+            norm: Callable[[int], "nn.Module"] = None,
+            **kwargs,
+    ):
+        """
+        Compact linear block with optional activation and normalization layers.
+        :param inp_features: number of input features
+        :param out_features: number of output features
+        :param act: activation function
+        :param norm: normalization layer
+        :param kwargs: arguments to pass to the linear layers
+        :keyword n: number of intermediate linear layers
+        :keyword p: dropout probability
+        :keyword act_every_n: whether to apply activation after every n linear layers
+        :keyword norm_every_n: whether to apply normalization after every n linear layers
+        :keyword identity: whether to use identity shortcut
+        """
         identity = kwargs.pop("identity", False)
-        super().__init__(*args, **kwargs)
+        super().__init__(inp_features, out_features, act, norm, **kwargs)
         self.identity = identity
         kwargs.pop("n", None)
         kwargs.pop("p", None)
         kwargs.pop("norm", None)
         kwargs.pop("act", None)
-        args = args[:min(len(args), 2)]
-        self.shortcut = LinearBlock(*args, **kwargs) if not identity else nn.Identity()
+        self.shortcut = LinearBlock(inp_features, out_features, **kwargs) if not identity else nn.Identity()
 
     def forward(self, x):
         y = x
@@ -129,16 +148,37 @@ class ResidualLinearBlock(LinearBlock):
 
 
 class ResidualConvBlock(ConvBlock):
-    def __init__(self, *args, **kwargs):
+    def __init__(
+            self,
+            inp_channels: int,
+            out_channels: int,
+            act: Callable[[], "nn.Module"] = None,
+            norm: Callable[[int], "nn.Module"] = None,
+            **kwargs,
+    ):
+        """
+        Compact convolutional block with optional activation and normalization layers.
+        :param inp_channels: number of input channels
+        :param out_channels: number of output channels
+        :param act: activation function
+        :param norm: normalization layer
+        :param kwargs: arguments to pass to the convolutional layers
+        :keyword n: number of intermediate convolutions
+        :keyword p: dropout probability
+        :keyword act_every_n: whether to apply activation after every n convolutions
+        :keyword norm_every_n: whether to apply normalization after every n convolutions
+        :keyword down: whether to downsample, if False, then upsample
+        :keyword identity: whether to use identity shortcut
+        """
+
         identity = kwargs.pop("identity", False)
-        super().__init__(*args, **kwargs)
+        super().__init__(inp_channels, out_channels, act, norm, **kwargs)
         self.identity = identity
         kwargs.pop("n", None)
         kwargs.pop("p", None)
         kwargs.pop("norm", None)
         kwargs.pop("act", None)
-        args = args[:min(len(args), 2)]
-        self.shortcut = ConvBlock(*args, **kwargs) if not identity else nn.Identity()
+        self.shortcut = ConvBlock(inp_channels, out_channels, **kwargs) if not identity else nn.Identity()
 
     def forward(self, x):
         y = x
@@ -151,7 +191,7 @@ class SkipBlock(nn.Module):
     def __init__(self, encoder: "nn.ModuleList", blocks: "nn.Module", decoder: "nn.ModuleList"):
         super().__init__()
         self.encoder = encoder
-        self.blocks = blocks
+        self.bottleneck = blocks
         self.decoder = decoder
 
     def forward(self, x):
@@ -159,7 +199,7 @@ class SkipBlock(nn.Module):
         for block in self.encoder:
             x = block(x)
             skips.append(x)
-        x = self.blocks(x)
+        x = self.bottleneck(x)
         for block in self.decoder:
             x = torch.cat([x, skips.pop()], dim=1)
             x = block(x)

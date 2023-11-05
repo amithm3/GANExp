@@ -10,6 +10,11 @@ BAR_FORMAT = "{desc} {n_fmt}/{total_fmt}|{bar}|{percentage:3.0f}% [{elapsed}<{re
 
 
 class PerceptualLoss:
+    """
+    Perceptual loss.
+    :param model: model to use for perceptual loss
+    :param criterion: cost function to use for perceptual loss
+    """
     def __init__(self, model: "nn.Module", criterion=None):
         if criterion is None: criterion = nn.L1Loss()
         self.model = model.eval().requires_grad_(False)
@@ -25,6 +30,16 @@ def train(
         collate_fn: Callable = None,
         step_offset: int = 0,
 ):
+    """
+    Train a model.
+    :param trainer: a callable that takes a batch of data and a step number performs a training step and returns metrics dict
+    :param dataset: dataset to train on
+    :param ne: number of epochs
+    :param bs: batch size
+    :param collate_fn: collate function for the dataloader
+    :param step_offset: initial step number
+    :return: final step number
+    """
     dl = DataLoader(dataset, batch_size=bs, shuffle=True, collate_fn=collate_fn)
     step = step_offset
     for epoch in range(ne):
@@ -48,14 +63,25 @@ def test(
         bs: int = 32,
         collate_fn: Callable[[list[dict[str, "torch.Tensor"]]], dict[str, "torch.Tensor"]] = None
 ):
+    """
+    Test a model.
+    :param tester: a callable that takes a batch of data and returns metrics dict
+    :param ds: dataset to test on
+    :param bs: batch size
+    :param collate_fn: collate function for the dataloader
+    :return: None
+    """
     dl = DataLoader(ds, batch_size=bs, shuffle=True, collate_fn=collate_fn)
     metrics_sum = {}
     prog: "TQDM" = tqdm(dl, desc=f"Batch", postfix={"loss": "?"}, bar_format=BAR_FORMAT)
     for batch, DATA in enumerate(prog):
         metrics = tester(DATA)
         for k, v in metrics.items():
+            if k.startswith("_"): continue
             metrics_sum[k] = metrics_sum.get(k, 0) + v
-        prog.set_postfix(**{k: f"{v / (batch + 1):.4f}" for k, v in metrics_sum.items()})
+        prog.set_description(f"Batch")
+        prog.set_postfix(**{k: f"{v / (batch + 1):.4f}" for k, v in metrics_sum.items()},
+                         **{k.removeprefix("_"): v for k, v in metrics.items() if k.startswith("_")})
 
 
 __all__ = [

@@ -209,23 +209,44 @@ def kl_cycle_gan_loss_step(
 
 
 def build_cycle_gan_trainer(
-        generatorA: "nn.Module", generatorB: "nn.Module",
-        discriminatorA: "nn.Module", discriminatorB: "nn.Module",
+        generatorA: "nn.Module", generatorB: "nn.Module", discriminatorA: "nn.Module", discriminatorB: "nn.Module",
         optimizerG: "optim.Optimizer", optimizerD: "optim.Optimizer",
         loss_step_fn: Callable[..., dict[str, float]],
         data_extractor: Callable[..., Iterable["torch.Tensor"]],
         **kwargs
 ):
+    """
+    A helper function to build a trainer for CycleGAN.
+    :param generatorA: generator for domain A
+    :param generatorB: generator for domain B
+    :param discriminatorA: discriminator for domain A
+    :param discriminatorB: discriminator for domain B
+    :param optimizerG: optimizer for generator
+    :param optimizerD: optimizer for discriminator
+    :param loss_step_fn: loss function
+    :param data_extractor: callable to extract domain A and domain B data from batch
+    :keyword writer: tensorboard writer
+    :keyword writer_period: logging period
+    :keyword fixed_inp: fixed input for logging
+    :keyword save_path: checkpoint save path
+    :keyword save_period: checkpoint save period
+    :keyword perceptual_loss: use perceptual loss
+    :keyword lambda_perceptual: perceptual loss weight
+    :keyword lambda_cycle: cycle loss weight
+    :keyword lambda_identity: identity loss weight
+    :keyword device: device to run on
+    :return: trainer function
+    """
     writer = kwargs.pop("writer", None)
     writer_period = kwargs.pop("writer_period", 100)
     fixed_inp = kwargs.pop("fixed_inp", None)
+    save_path = kwargs.pop("save_path", None)
+    save_period = kwargs.pop("save_period", 200)
     perceptual_loss = kwargs.pop("perceptual_loss", False)
     lambda_perceptual = kwargs.pop("lambda_perceptual", 1)
     lambda_cycle = kwargs.pop("lambda_cycle", 10)
-    lambda_identity = kwargs.pop("lambda_identity", 0.5)
+    lambda_identity = kwargs.pop("lambda_identity", 1)
     device = kwargs.pop("device", None)
-    save_path = kwargs.pop("save_path", None)
-    save_period = kwargs.pop("save_period", 200)
 
     if writer:
         assert fixed_inp is not None, \
@@ -236,7 +257,11 @@ def build_cycle_gan_trainer(
         perceptual_model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features[:29].eval().to(device)
         perceptual_loss = PerceptualLoss(perceptual_model)
 
+    first = True
+
     def trainer(DATA, step: int) -> dict[str, float]:
+        nonlocal first
+
         realA, realB = data_extractor(DATA)
         metrics = loss_step_fn(
             generatorA, generatorB,
@@ -262,7 +287,7 @@ def build_cycle_gan_trainer(
         # ---End Logging---
 
         # ===Checkpoint===
-        if save_path and step % save_period == 0:
+        if save_path and step % save_period == 0 and not first:
             save_checkpoint(
                 save_path,
                 models={
@@ -279,6 +304,7 @@ def build_cycle_gan_trainer(
             )
         # ---End Checkpoint---
 
+        if first: first = False
         metrics["_step"] = step
         return metrics
 
@@ -287,7 +313,7 @@ def build_cycle_gan_trainer(
 
 __all__ = [
     "build_gan_trainer",
-    "kl_gan_loss_step",
     "build_cycle_gan_trainer",
+    "kl_gan_loss_step",
     "kl_cycle_gan_loss_step",
 ]

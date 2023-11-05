@@ -7,9 +7,10 @@ from torch import nn, optim
 def save_checkpoint(
         path: str,
         models: dict[str, "nn.Module"],
-        optimizers: dict[str, "optim.Optimizer"],
+        optimizers: dict[str, "optim.Optimizer"] = None,
         **others,
 ) -> str:
+    if optimizers is None: optimizers = {}
     path = f"{path}/checkpoint-{datetime.now()}.pt" if not path.endswith(".pt") else path
     torch.save({
         **{f"model_{k}_state_dict": v.state_dict() for k, v in models.items()},
