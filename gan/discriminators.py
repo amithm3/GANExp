@@ -26,16 +26,16 @@ class PatchDiscriminator(Discriminator):
         norm = self.norm
         act = self.act
         blocks = list(blocks)
-        self.head = ConvBlock(inp_channels, blocks[0], act,
+        self.head = ConvBlock(inp_channels, blocks[0], None, act,
                               n=n, p=p, act_every_n=False, norm_every_n=True,
                               kernel_size=4, stride=2, padding=1)
         self.blocks = nn.Sequential(*[
-            ConvBlock(inp_features, out_features, act, norm,
+            ConvBlock(inp_features, out_features, norm, act,
                       n=n, p=p, act_every_n=False, norm_every_n=True, down=True,
                       kernel_size=4, stride=2 if i < len(blocks) - 2 else 1, padding=1)
             for i, (inp_features, out_features) in enumerate(zip(blocks[:-1], blocks[1:]))
         ])
-        self.tail = ConvBlock(blocks[-1], 1, nn.Sigmoid if use_sigmoid else None,
+        self.tail = ConvBlock(blocks[-1], 1, None, nn.Sigmoid if use_sigmoid else None,
                               n=n, p=p, act_every_n=False, norm_every_n=False,
                               kernel_size=4, stride=1, padding=1)
 

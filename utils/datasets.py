@@ -64,7 +64,7 @@ class ImageDataset(Dataset, metaclass=ABCMeta):
             f"Directory {DIR} does not exist"
         assert 0 < sub_sample <= 1, \
             f"Value of sub_sample must be between 0 and 1, got {sub_sample}"
-        assert SET in self.SETS, \
+        assert SET is None or SET in self.SETS, \
             f"invalid value of SET, must be one of {self.SETS}, got {SET}"
         assert all(callable(t) for t in transforms.values()), \
             f"Transforms must be callable"

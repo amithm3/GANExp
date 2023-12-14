@@ -22,7 +22,7 @@ class DCGenerator(LatentGenerator):
         :keyword head_padding: Padding of the first convolutional layer.
         """
         head_kernel = kwargs.pop("head_kernel", 4)
-        head_stride = kwargs.pop("head_stride", 2)
+        head_stride = kwargs.pop("head_stride", 1)
         head_padding = kwargs.pop("head_padding", 0)
         assert isinstance(head_kernel, int) and latent_dim > 0, \
             f"Invalid value of head_kernel, must be a positive integer, got {head_kernel}"
@@ -65,10 +65,10 @@ class ResGenerator(ConvGenerator):
         :param inp_channels: Number of input channels.
         :param out_channels: Number of output channels.
         :param hidden_channels: Number of hidden channels.
+        :keyword act: Activation function.
+        :keyword norm: Normalization layer.
         :keyword n: Number of layers between each normalization layer.
         :keyword p: Dropout probability.
-        :keyword norm: Normalization layer.
-        :keyword act: Activation function.
         :keyword sample_layers: Number of sampling layers.
         :keyword residuals: Number of residual blocks.
         :keyword head_kernel: Kernel size of the first convolutional layer.
@@ -139,6 +139,9 @@ class ResGenerator(ConvGenerator):
         x = self.blocks(x)
         y = self.tail(x)
         return y
+
+
+
 
 
 __all__ = [

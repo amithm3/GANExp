@@ -3,3 +3,4 @@ torchvision~=0.16.0
 matplotlib~=3.8.1
 tqdm~=4.66.1
 tensorboard~=2.15.1
+kaggle~=1.5.16

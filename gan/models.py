@@ -21,7 +21,7 @@ def build_DCGan(config: "DCGanConfig"):
         config.latent_dim, config.out_channels, config.hidden_channels,
         n=config.n, p=config.p, norm=nn.InstanceNorm2d, act=nn.ReLU,
         sampling_layers=config.sampling_layers,
-        head_kernel=config.head_kernel, head_stride=config, head_padding=config.head_padding,
+        head_kernel=config.head_kernel, head_stride=config.head_stride, head_padding=config.head_padding,
     ).to(config.device)
     discriminator = PatchDiscriminator(
         config.out_channels, config.blocks,
