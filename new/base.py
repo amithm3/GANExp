@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Iterable, Union
+from typing import Iterable, Union, Callable
 
 import torch
 from torch import nn, optim
@@ -162,8 +162,12 @@ class Critic(Discriminator):
         super().__init__(blocks, **kwargs)
 
 
-class GAN(nn.Module, metaclass=ABCMeta):
-    def __init__(self, **kwargs):
+class Gan(nn.Module, metaclass=ABCMeta):
+    def __init__(
+            self,
+            data_extractor: Callable[..., tuple["torch.Tensor", "torch.Tensor"]],
+            **kwargs,
+    ):
         """
         Base class for all GANs.
         :param generators: List of generators.
@@ -183,6 +187,7 @@ class GAN(nn.Module, metaclass=ABCMeta):
         super().__init__()
         self.perceptual = perceptual
         self.perceptual_lambda = perceptual_lambda
+        self.data_extractor = data_extractor
 
     @abstractmethod
     def loss_step(
@@ -197,7 +202,7 @@ class GAN(nn.Module, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class KLGan(GAN):
+class KLGan(Gan, metaclass=ABCMeta):
     def loss_step(
             self,
             generator: "nn.Module",
@@ -261,6 +266,6 @@ __all__ = [
     "Img2ImgGenerator",
     "Discriminator",
     "Critic",
-    "GAN",
+    "Gan",
     "KLGan",
 ]

@@ -119,7 +119,7 @@ def build_gan_trainer(
             )
         # ---End Checkpoint---
 
-        metrics["step"] = step
+        metrics["_step"] = step
         return metrics
 
     return trainer

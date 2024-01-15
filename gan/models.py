@@ -8,7 +8,7 @@ from . import DCGenerator, PatchDiscriminator, ResDiscriminator, ResGenerator, G
 # === DCGAN ===
 @dataclass
 class DCGanConfig(GanConfig):
-    latent_dim: int = 3
+    latent_dim: int = 128
     out_channels: int = 3
     hidden_channels: int = 64
     head_kernel: int = 4

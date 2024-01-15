@@ -154,7 +154,7 @@ class Critic(Discriminator):
 
 @dataclass
 class GanConfig(Config):
-    n: int = 0
+    n: int = 1
     p: float = 0
     sampling_layers: int = 2
     lr: float = 0.0002
